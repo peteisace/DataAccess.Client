@@ -3,10 +3,13 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>Peteisace.DataAccess.Client</PackageId>
-    <Version>1.0.0</Version>
+    <Version>1.0.3</Version>
     <Authors>pcoleman</Authors>
     <Company>Peteisace</Company>
-    <Description>A very simple library to aid with data-access for ms-sql. ADO.NET can be a little verbose, and potentially causes duplicate code (instantiation of connections etc) which can provoke bugs, like failing to close. This is just the first version, coming soon will be database independence, and using a journal pattern which collects statistics and information to return to the caller rather than needing to couple the library with all manner of loggers, kafkas, data platforms etc.    
+    <Description>A very simple library to aid with data-access for ms-sql. ADO.NET can be a little verbose, and potentially causes duplicate code (instantiation of connections etc) which can provoke bugs, like failing to close. This is just the first version, 
+coming soon will be database independence, and using a journal pattern which collects statistics and information to return to the caller rather than needing to couple the library with all manner of loggers, kafkas, data platforms etc. 
+
+Oh and kids, even when you think your code is so simple, you can just submit it without real testing, don't. Bug number 4 already. How embarassing :(
     </Description>
     <PackageTags>Sql;DataAccess;DataAccess.Client</PackageTags>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>

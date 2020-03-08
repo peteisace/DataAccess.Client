@@ -6,6 +6,7 @@ namespace Peteisace.DataAccess.Client
 {
     public static class DBExecutor
     {
+        private static SqlParameterCache _cache = new SqlParameterCache();
         private delegate Task<object> CommandActionDelegate(SqlCommand command);
                 
         public static async Task ExecuteReader(string connectionString, string procName, ReaderActionDelegate readerAction, params object[] parameters)
@@ -18,7 +19,7 @@ namespace Peteisace.DataAccess.Client
 
                 return 1;
 
-            }, parameters);
+            }, true, parameters);
         }
 
         public static async Task<object> ExecuteScalar(string connectionString, string procName, params object[] parameters)
@@ -27,7 +28,7 @@ namespace Peteisace.DataAccess.Client
 
                 return await cmd.ExecuteScalarAsync();
 
-            }, parameters);
+            }, true, parameters);
 
             return scalar;
         }   
@@ -38,24 +39,39 @@ namespace Peteisace.DataAccess.Client
 
                 return await cmd.ExecuteNonQueryAsync();
 
-            }, parameters);
+            }, true, parameters);
         }     
-        
-        private static async Task<object> OpenConnectionAndExec(string connectionString, string commandText, CommandActionDelegate actionDelegate, object[] parameters)
+                
+        private static async Task<object> OpenConnectionAndExec(string connectionString, string commandText, CommandActionDelegate actionDelegate, bool derive, object[] parameters)
         {
             using(SqlConnection conn = new SqlConnection(connectionString))
             {
                 using(SqlCommand command = new SqlCommand(commandText, conn))
-                {
-                    // Setup parameters
-                    foreach(var parameter in parameters)
-                    {
-                        command.Parameters.Add(parameter);
-                    }
+                {   
+                    // sp 
+                    command.CommandType = CommandType.StoredProcedure;
                     
                     // Open
                     await conn.OpenAsync();
 
+                    if(derive)
+                    {
+                        // get the parameters
+                        var sqlParameters = _cache.Get(command);
+
+                        // add they values
+                        for(int i = 0; i < sqlParameters.Length; i++)
+                        {
+                            sqlParameters[i].Value = parameters[i];
+                        }
+
+                        // Change var
+                        parameters = sqlParameters;
+                    }
+                    
+                    // Add the list of sql parameters.
+                    command.Parameters.AddRange(parameters);
+                    
                     // Execute action
                     return await actionDelegate.Invoke(command);
                 }
