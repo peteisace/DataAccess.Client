@@ -44,6 +44,11 @@ namespace Peteisace.DataAccess.Client
                 
         private static async Task<object> OpenConnectionAndExec(string connectionString, string commandText, CommandActionDelegate actionDelegate, bool derive, object[] parameters)
         {
+            SqlCommandBuilder x = null;
+            System.Data.Common.DbCommandBuilder y = null;
+            Microsoft.Data.SqlClient.SqlClientFactory z;
+            
+            
             using(SqlConnection conn = new SqlConnection(connectionString))
             {
                 using(SqlCommand command = new SqlCommand(commandText, conn))
@@ -73,7 +78,7 @@ namespace Peteisace.DataAccess.Client
                     command.Parameters.AddRange(parameters);
                     
                     // Execute action
-                    return await actionDelegate.Invoke(command);
+                    return await actionDelegate.Invoke(command);                    
                 }
             }
         }
