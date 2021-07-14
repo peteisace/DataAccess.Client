@@ -9,7 +9,7 @@ namespace Peteisace.DataAccess.Client
 {
     public class SqlParameterCache
     {
-        private Dictionary<string, SqlParameter[]> _cache = new Dictionary<string, SqlParameter[]>();
+        private Dictionary<string, IDbDataParameter[]> _cache = new Dictionary<string, IDbDataParameter[]>();
 
         public SqlParameter[] Get(SqlCommand cmd)
         {
@@ -47,7 +47,7 @@ namespace Peteisace.DataAccess.Client
             }
 
             // We know we will have value.
-            return this._cache[key];
+            return (SqlParameter[])this._cache[key];
         }
 
         public IDbDataParameter[] GetAgnosticParameters(IDbCommand command, DbProviderFactory dbProviderFactory)
@@ -100,6 +100,8 @@ namespace Peteisace.DataAccess.Client
                     }
                 }                
             }
+
+            throw new InvalidOperationException("Derive parameters not supported by your data provider.");
         }
     }
 }

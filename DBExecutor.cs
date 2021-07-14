@@ -8,6 +8,8 @@ namespace Peteisace.DataAccess.Client
     {
         private static SqlParameterCache _cache = new SqlParameterCache();
         private delegate Task<object> CommandActionDelegate(SqlCommand command);
+
+        internal static SqlParameterCache ParameterCache => _cache;
                 
         public static async Task ExecuteReader(string connectionString, string procName, ReaderActionDelegate readerAction, params object[] parameters)
         {
@@ -43,12 +45,7 @@ namespace Peteisace.DataAccess.Client
         }     
                 
         private static async Task<object> OpenConnectionAndExec(string connectionString, string commandText, CommandActionDelegate actionDelegate, bool derive, object[] parameters)
-        {
-            SqlCommandBuilder x = null;
-            System.Data.Common.DbCommandBuilder y = null;
-            Microsoft.Data.SqlClient.SqlClientFactory z;
-            
-            
+        {                        
             using(SqlConnection conn = new SqlConnection(connectionString))
             {
                 using(SqlCommand command = new SqlCommand(commandText, conn))
