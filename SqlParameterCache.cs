@@ -35,7 +35,7 @@ namespace Peteisace.DataAccess.Client
                 }
 
                 // Horrid... Create then remove
-                SqlCommandBuilder.DeriveParameters(cmd);
+                SqlCommandBuilder.DeriveParameters(cmd);                
                 cmd.Parameters.RemoveAt(0); // Stupid return_value
                 // Now copy to array
                 SqlParameter[] sqlParameters = new SqlParameter[cmd.Parameters.Count];
@@ -88,7 +88,7 @@ namespace Peteisace.DataAccess.Client
                             m.Invoke(null, new object[] { command });
 
                             // So now we should be good and have a nice list of parameters
-                            command.Parameters.RemoveAt(0); // Stupid return value.
+                            command.Parameters.RemoveAt(0); // Stupid return value. This will surely break, particularly if we need postgres. 
                             // Copy to array
                             IDbDataParameter[] parameters = new IDbDataParameter[command.Parameters.Count];
                             command.Parameters.CopyTo(parameters, 0);

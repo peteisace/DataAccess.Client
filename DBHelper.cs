@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Peteisace.DataAccess.Client.Configuration;
+using System.Linq;
+using System;
 
 namespace Peteisace.DataAccess.Client
 {
@@ -41,11 +41,16 @@ namespace Peteisace.DataAccess.Client
         }
 
         public async Task ExecuteReaderAsync(string providerName, string connectionString, string storedProcedure, ReaderActionDelegate readerAction, bool deriveParameters, params object[] parameters)
-        {
+        {            
+            if(!deriveParameters && parameters.Length > 0 && !parameters.All(p => p is IParameterInfo))
+            {
+                // This is bad.
+                throw new InvalidOperationException("Must use instances of IParameterInfo as the parameter collection when using this method.");
+            }
             await this.ExecuteReaderAsync(providerName, connectionString, storedProcedure, CommandType.StoredProcedure, readerAction, deriveParameters, parameters);
         }
 
-        public async Task ExecuteReaderAsync(string connectionStringName, string commandText, ReaderActionDelegate readerAction, params IDbDataParameter[] parameters)
+        public async Task ExecuteReaderAsync(string connectionStringName, string commandText, ReaderActionDelegate readerAction, params IParameterInfo[] parameters)
         {
             ConnectionStringsInfo value = null;
             this.connectionStrings.TryGetValue(connectionStringName, out value);
@@ -53,11 +58,11 @@ namespace Peteisace.DataAccess.Client
             await this.ExecuteReaderAsync(value.ProviderName, value.ConnectionString, commandText, CommandType.Text, readerAction, false, parameters);
         }
 
-        public async Task ExecuteReaderAsync(string providerName, string connectionString, string commandText, ReaderActionDelegate readerAction, params IDbDataParameter[] parameters)
-        {
+        public async Task ExecuteReaderAsync(string providerName, string connectionString, string commandText, ReaderActionDelegate readerAction, params IParameterInfo[] parameters)
+        {            
             await this.ExecuteReaderAsync(providerName, connectionString, commandText, CommandType.Text, readerAction, false, parameters);
         }
-
+    
         private async Task ExecuteReaderAsync(string providerName, string connectionString, string commandText, CommandType commandType, ReaderActionDelegate readerAction, bool deriveParameters, object[] parameters)
         {
             // Grab the provider factory.
@@ -73,7 +78,7 @@ namespace Peteisace.DataAccess.Client
                 using (var command = providerFactory.CreateCommand())
                 {
                     // Set the stored procedure.
-                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandType = commandType;
 
                     // Open the connection.
                     await connection.OpenAsync();
@@ -91,8 +96,35 @@ namespace Peteisace.DataAccess.Client
 
                         parameters = dbParameters;
                     }
+                    else
+                    {
+                        if(!parameters.All(p => p is IParameterInfo))
+                        {
+                            throw new InvalidOperationException("Not using DeriveParameters but parameters passed not of type IParameterInfo.");
+                        }
+                        List<IDbDataParameter> dbDataParameters = new List<IDbDataParameter>();
+                        // Go through our parameter info
+                        foreach(var info in parameters)
+                        {
+                            IParameterInfo parameter = info as IParameterInfo;
+                            if(parameter != null)
+                            {
+                                var dbParameter = providerFactory.CreateParameter();
+                                dbParameter.ParameterName = parameter.Name;
+                                dbParameter.Value = parameter.Value;
+                                // Direction?
+
+                                dbDataParameters.Add(dbParameter);
+                            }
+                        }
+
+                        // And set to be the array. 
+                        parameters = dbDataParameters.ToArray();
+                    }
 
                     // Parameters has now been changed to be, or is assumed to be, an array of IDbDataParameter
+                    // checked the IDbProvider and CreateParameter does not attach the parameter to the command
+                    // so they need to be separately addded.
                     command.Parameters.AddRange(parameters);
 
                     // Run it.
